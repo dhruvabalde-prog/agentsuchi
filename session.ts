@@ -1,0 +1,51 @@
+import { cookies } from 'next/headers';
+import { EncryptJWT, jwtDecrypt } from 'jose';
+import crypto from 'node:crypto';
+
+const COOKIE = 'suchi_session';
+const secret = () => {
+  const value = process.env.SESSION_SECRET;
+  if (!value || value.length < 32) throw new Error('SESSION_SECRET must be at least 32 characters.');
+  return crypto.createHash('sha256').update(value).digest();
+};
+
+export type Session = {
+  email: string;
+  name: string;
+  picture?: string;
+  accessToken: string;
+  refreshToken?: string;
+  expiry?: number;
+};
+
+export async function setSession(session: Session) {
+  const token = await new EncryptJWT(session as Record<string, unknown>)
+    .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .encrypt(secret());
+
+  (await cookies()).set(COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+  });
+}
+
+export async function getSession(): Promise<Session | null> {
+  const raw = (await cookies()).get(COOKIE)?.value;
+  if (!raw) return null;
+  try {
+    const { payload } = await jwtDecrypt(raw, secret());
+    if (typeof payload.email !== 'string' || typeof payload.name !== 'string' || typeof payload.accessToken !== 'string') return null;
+    return payload as unknown as Session;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearSession() {
+  (await cookies()).delete(COOKIE);
+}
