@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suchi AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{--bg:#0D0E12;--surf:#16181D;--surf2:#1D2027;--bd:#262933;--tx:#ECEEF3;--mut:#8B8F9C;--gold:#C9A15A;--life:#5B8FDB;--work:#DB8F5B;--shadow:0 8px 24px rgba(0,0,0,.35);}
+  :root[data-theme="light"]{--bg:#F3F1EC;--surf:#FFFFFF;--surf2:#ECE9E1;--bd:#DFDACD;--tx:#1B1D22;--mut:#767A85;--gold:#A97C2F;--life:#3D6FC4;--work:#C97A3D;--shadow:0 8px 20px rgba(30,25,15,.08);}
+  *{-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--tx);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;transition:background .2s,color .2s;}
+  .icon-toggle{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid var(--bd);}
+  .icon-toggle.active-life{background:var(--life);border-color:var(--life);color:#fff;}
+  .icon-toggle.active-work{background:var(--work);border-color:var(--work);color:#fff;}
+  .snap-wrap{scroll-snap-type:y mandatory;overflow-y:auto;}
+  .snap-card{scroll-snap-align:start;min-height:calc(100vh - 210px);}
+  .card{background:var(--surf);border:1px solid var(--bd);border-radius:18px;}
+  .btn{border-radius:14px;}
+  .scroll-x::-webkit-scrollbar{display:none;}
+  .scroll-x{-ms-overflow-style:none;scrollbar-width:none;}
+  .tab-active{color:var(--tx);border-bottom:2px solid var(--gold);}
+  .tab-idle{color:var(--mut);border-bottom:2px solid transparent;}
+  .nav-active{color:var(--gold);}
+  .nav-idle{color:var(--mut);}
+  .swipe-up{animation:swipeUp .28s ease forwards;}
+  @keyframes swipeUp{to{transform:translateY(-110%);opacity:0;}}
+  .fade-in{animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .ring-mode-life{box-shadow:0 0 0 2px var(--life) inset;}
+  .ring-mode-work{box-shadow:0 0 0 2px var(--work) inset;}
+  input,textarea{background:var(--surf2);border:1px solid var(--bd);color:var(--tx);}
+  ::placeholder{color:var(--mut);}
+</style>
+</head>
+<body class="min-h-screen max-w-md mx-auto relative pb-24">
+
+<!-- ================= HEADER ================= -->
+<header class="sticky top-0 z-30 bg-[var(--bg)]/95 backdrop-blur border-b border-[var(--bd)] px-4 pt-3 pb-2">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#C9A15A" stroke-width="1.6"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#C9A15A" stroke-width="1.6"/><path d="M15 9l-2 5-5 2 2-5 5-2z" fill="#C9A15A"/></svg>
+      <span class="font-semibold tracking-tight text-lg">Suchi AI</span>
+    </div>
+    <div class="flex items-center gap-2" id="headerIcons">
+      <button onclick="setMode('life')" id="lifeBtn" class="icon-toggle" title="Life">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg>
+      </button>
+      <button onclick="setMode('work')" id="workBtn" class="icon-toggle" title="Work">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      </button>
+      <button onclick="syncNow()" id="syncBtn" class="text-[var(--mut)] ml-1" title="Sync now">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v5h5M20 20v-5h-5"/><path d="M20 9a8 8 0 00-14.6-4M4 15a8 8 0 0014.6 4"/></svg>
+      </button>
+      <button onclick="toggleTheme()" class="text-[var(--mut)]" title="Theme">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+      </button>
+      <button onclick="openModal('settingsModal')" class="text-[var(--mut)]" title="Profile & settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20c1.4-3.6 4.3-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- Secondary tabs (Suchi AI / Chats screens) -->
+  <div class="flex mt-3 text-sm" id="subTabs"></div>
+</header>
+
+<!-- ================= MAIN VIEWS ================= -->
+<main class="px-4 pt-4">
+
+  <!-- ---- MY DAY ---- -->
+  <section id="view-myday" class="space-y-5">
+    <button onclick="openSchedule()" class="card w-full text-left p-4 block">
+      <div class="text-xs text-[var(--mut)]" id="mdModeLabel">Work calendar</div>
+      <div class="font-semibold mt-1" id="mdEventTitle">Connect Google to see today's plan</div>
+      <div class="text-sm text-[var(--mut)] mt-0.5" id="mdEventTime"></div>
+    </button>
+
+    <div>
+      <div class="text-sm font-medium text-[var(--mut)] mb-2">North Stars</div>
+      <div class="space-y-2" id="starsBox">
+        <div class="text-sm text-[var(--mut)]">Connect Google to load your North Stars.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="text-sm font-medium text-[var(--mut)] mb-2">Overdue</div>
+      <div class="flex gap-2 overflow-x-auto scroll-x pb-1" id="overdueBox"></div>
+    </div>
+
+    <div>
+      <div class="text-sm font-medium text-[var(--mut)] mb-2">Routines</div>
+      <div class="flex gap-3 overflow-x-auto scroll-x pb-1">
+        <div class="card min-w-[180px] p-4 shrink-0">
+          <div class="font-medium text-black bg-[var(--gold)] inline-block px-2 py-0.5 rounded-md text-sm">Morning Reset</div>
+          <div class="text-xs text-[var(--mut)] mt-2">4 steps · 18 min</div>
+          <button onclick="startRoutineReal('Morning Reset',['Hydrate','Stretch','Plan top 3','Review calendar'],[180,300,300,240])" class="mt-3 w-full btn bg-[var(--surf2)] py-2 flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Play
+          </button>
+        </div>
+        <div class="card min-w-[180px] p-4 shrink-0">
+          <div class="font-medium text-black bg-[var(--gold)] inline-block px-2 py-0.5 rounded-md text-sm">Wind Down</div>
+          <div class="text-xs text-[var(--mut)] mt-2">3 steps · 12 min</div>
+          <button onclick="startRoutineReal('Wind Down',['Close laptop','Tomorrow’s top 3','Lights & journal'],[120,300,300])" class="mt-3 w-full btn bg-[var(--surf2)] py-2 flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Play
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="text-sm font-medium text-[var(--mut)] mb-2">Smart suggestions</div>
+      <div class="card p-3.5 text-sm">You have a 25-min gap at 4 PM — good slot for "Approve budget doc".</div>
+    </div>
+  </section>
+
+  <!-- ---- SUCHI AI (super agent chat, landing) ---- -->
+  <section id="view-suchi" class="hidden flex-col h-[62vh]">
+    <div id="suchiActions" class="hidden snap-wrap h-[62vh]"></div>
+    <div id="suchiChat" class="flex-1 overflow-y-auto space-y-3 pb-3"></div>
+  </section>
+
+  <!-- ---- CHATS ---- -->
+  <section id="view-chats" class="hidden space-y-2" id="chatList"></section>
+
+</main>
+
+<!-- Chat detail overlay -->
+<div id="chatDetail" class="hidden fixed inset-0 z-40 bg-[var(--bg)] max-w-md mx-auto flex flex-col">
+  <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--bd)]">
+    <button onclick="closeChatDetail()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="font-medium" id="chatDetailName">Chat</div>
+  </div>
+  <div id="chatDetailMsgs" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+  <div class="flex items-center gap-2 p-3 border-t border-[var(--bd)]">
+    <button id="chatDetailTasksBtn" onclick="taskFromChat()" class="text-xs text-[var(--mut)] px-2">+ Task</button>
+    <input id="chatDetailInput" placeholder="Message…" class="flex-1 rounded-xl px-3 py-2 text-sm">
+    <button onclick="sendChatDetail()" class="btn bg-[var(--gold)] text-black px-3 py-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<!-- Persistent command bar (Suchi tab) + mic -->
+<div id="suchiInputBar" class="hidden fixed bottom-20 left-0 right-0 max-w-md mx-auto px-4">
+  <div class="card flex items-center gap-2 p-2">
+    <input id="suchiInput" placeholder="Ask Suchi anything…" class="flex-1 bg-transparent border-0 focus:outline-none px-2 text-sm">
+    <button onclick="sendSuchi()" class="btn bg-[var(--gold)] text-black p-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+<button id="micBtn" onclick="setTab('suchi')" class="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full bg-[var(--gold)] text-black flex items-center justify-center shadow-lg">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 19v3"/></svg>
+</button>
+
+<!-- ================= BOTTOM NAV ================= -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[var(--surf)] border-t border-[var(--bd)] flex z-30">
+  <button onclick="setTab('myday')" id="nav-myday" class="flex-1 py-3 flex flex-col items-center gap-1 text-xs">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>My Day
+  </button>
+  <button onclick="setTab('suchi')" id="nav-suchi" class="flex-1 py-3 flex flex-col items-center gap-1 text-xs">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 5-5 2 2-5 5-2z"/></svg>Suchi AI
+  </button>
+  <button onclick="setTab('chats')" id="nav-chats" class="flex-1 py-3 flex flex-col items-center gap-1 text-xs">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Chats
+  </button>
+</nav>
+
+<!-- ================= MODALS ================= -->
+<!-- Settings -->
+<div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end">
+  <div class="card w-full max-w-md mx-auto rounded-b-none p-5 max-h-[85vh] overflow-y-auto fade-in">
+    <div class="flex justify-between items-center mb-4">
+      <div class="font-semibold text-lg">Profile & settings</div>
+      <button onclick="closeModal('settingsModal')">✕</button>
+    </div>
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-14 h-14 rounded-full bg-[var(--surf2)] flex items-center justify-center text-[var(--mut)] text-xs">DP</div>
+      <div class="flex-1">
+        <input value="Alex" class="w-full rounded-lg px-2 py-1 text-sm mb-1">
+        <button class="text-xs text-[var(--gold)]">Update photo</button>
+      </div>
+    </div>
+    <div class="card p-3 flex items-center justify-between mb-2" id="gConnectRow">
+      <button onclick="location.href='/api/auth/google'" class="w-full btn bg-[var(--gold)] text-black py-2 text-sm font-medium">Connect Google</button>
+    </div>
+    <div class="text-sm font-medium text-[var(--mut)] mt-4 mb-2">Permissions</div>
+    <div class="space-y-2 text-sm">
+      <div class="flex items-center justify-between card p-3"><span>Gmail — read & draft only</span><input type="checkbox" id="permGmail" onchange="savePerms()" checked></div>
+      <div class="flex items-center justify-between card p-3"><span>Calendar</span><input type="checkbox" id="permCalendar" onchange="savePerms()" checked></div>
+      <div class="flex items-center justify-between card p-3"><span>Sheets, Docs, Slides</span><input type="checkbox" id="permWorkspace" onchange="savePerms()" checked></div>
+      <div class="flex items-center justify-between card p-3"><span>Tasks</span><input type="checkbox" id="permTasks" onchange="savePerms()" checked></div>
+      <div class="flex items-center justify-between card p-3"><span>WhatsApp — draft only</span><input type="checkbox" id="permWhatsapp" onchange="savePerms()" checked></div>
+    </div>
+    <p class="text-xs text-[var(--mut)] mt-4">Suchi and her agents can only save drafts — nothing sends without your tap. Note: Google Forms API access requires a Google-approved app, and Google Keep has no general-purpose API, so Keep-style notes are stored as Tasks instead.</p>
+  </div>
+</div>
+
+<!-- Schedule (full day) -->
+<div id="scheduleModal" class="hidden fixed inset-0 z-50 bg-[var(--bg)] max-w-md mx-auto flex flex-col fade-in">
+  <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--bd)]">
+    <button onclick="closeModal('scheduleModal')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="font-medium" id="scheduleDayLabel">Today</div>
+    <div class="flex gap-3"><button title="Add event" onclick="addEvent()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+    <button title="Next day" onclick="nextDay()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>
+  </div>
+  <div class="flex-1 overflow-y-auto p-4 space-y-1 text-sm" id="scheduleList"></div>
+</div>
+
+<!-- North Star breakdown -->
+<div id="starModal" class="hidden fixed inset-0 z-50 bg-[var(--bg)] max-w-md mx-auto flex flex-col fade-in">
+  <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--bd)]">
+    <button onclick="closeModal('starModal')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="font-medium" id="starTitle">North Star</div>
+  </div>
+  <div class="p-4 space-y-2 text-sm overflow-y-auto flex-1">
+    <div class="card p-3" id="starNotes">No breakdown yet.</div>
+  </div>
+  <div class="p-4 border-t border-[var(--bd)]">
+    <button onclick="completeStar()" class="w-full btn bg-[var(--gold)] text-black py-2.5 text-sm font-medium">Mark complete</button>
+  </div>
+</div>
+
+<!-- Routine timer, full screen -->
+<div id="routineModal" class="hidden fixed inset-0 z-50 bg-[var(--bg)] max-w-md mx-auto flex flex-col items-center justify-center px-8 fade-in">
+  <div class="text-sm text-[var(--mut)]" id="rtName"></div>
+  <div class="text-lg mt-1 mb-6" id="rtStep"></div>
+  <div class="text-6xl font-light tabular-nums" id="rtClock">00:00</div>
+  <div class="flex gap-4 mt-10">
+    <button onclick="rtSkip()" class="btn bg-[var(--surf2)] px-4 py-3 text-sm">Skip</button>
+    <button onclick="rtPause()" id="rtPauseBtn" class="btn bg-[var(--gold)] text-black px-6 py-3 text-sm">Pause</button>
+    <button onclick="rtStop()" class="btn bg-[var(--surf2)] px-4 py-3 text-sm">Stop</button>
+  </div>
+</div>
+
+<script>
+/* ---------- state ---------- */
+let mode='life', tab='myday', subTab='';
+const life={agents:['Nira — Health','Kavi — Home','Meera — Finance','Arjun — Learning','Isha — Errands'],
+  family:['Family Group','Wife — Meera','Father','Mother','Son — Dev','Daughter — Ria']};
+const work={agents:['Rohan — Ops','Zara — Marketing','Dev — Engineering','Anika — Sales','Kiran — HR'],
+  teams:['Product Team','Design Team','Leadership','Engineering']};
+
+/* ---------- header sub-tabs ---------- */
+function renderSubTabs(){
+  const el=document.getElementById('subTabs');
+  if(tab==='suchi'){ el.innerHTML=`
+    <button onclick="setSub('ai')" class="flex-1 text-center py-2 ${subTab==='ai'?'tab-active':'tab-idle'}">Suchi AI</button>
+    <button onclick="setSub('actions')" class="flex-1 text-center py-2 ${subTab==='actions'?'tab-active':'tab-idle'}">Actions</button>`;
+  } else if(tab==='chats'){ const a=mode==='life'?'Family':'Teams'; el.innerHTML=`
+    <button onclick="setSub('agents')" class="flex-1 text-center py-2 ${subTab==='agents'?'tab-active':'tab-idle'}">Agents</button>
+    <button onclick="setSub('second')" class="flex-1 text-center py-2 ${subTab==='second'?'tab-active':'tab-idle'}">${a}</button>`;
+  } else { el.innerHTML=''; }
+}
+function setMode(m){ if(tab==='suchi') return; mode=m;
+  document.getElementById('lifeBtn').className='icon-toggle'+(mode==='life'?' active-life':'');
+  document.getElementById('workBtn').className='icon-toggle'+(mode==='work'?' active-work':'');
+  document.getElementById('mdModeLabel').textContent=mode==='life'?'Family calendar':'Work calendar';
+  if(tab==='chats') renderChatList();
+}
+function setSub(s){ subTab=s; renderSubTabs();
+  if(tab==='suchi'){ document.getElementById('suchiChat').classList.toggle('hidden', s!=='ai'); document.getElementById('suchiActions').classList.toggle('hidden', s!=='actions');
+    document.getElementById('suchiInputBar').classList.toggle('hidden', s!=='ai');
+    if(s==='actions') loadActions(); }
+  if(tab==='chats') renderChatList();
+}
+function setTab(t){ tab=t;
+  ['myday','suchi','chats'].forEach(v=>document.getElementById('view-'+v).classList.add('hidden'));
+  ['myday','suchi','chats'].forEach(v=>document.getElementById('nav-'+v).className='flex-1 py-3 flex flex-col items-center gap-1 text-xs '+(v===t?'nav-active':'nav-idle'));
+  document.getElementById('micBtn').classList.toggle('hidden', t==='suchi');
+  if(t==='myday'){ document.getElementById('view-myday').classList.remove('hidden'); document.getElementById('suchiInputBar').classList.add('hidden'); setMode(mode); }
+  if(t==='suchi'){ document.getElementById('view-suchi').classList.remove('hidden'); document.getElementById('view-suchi').classList.add('flex'); mode='life'; setSub(subTab==='actions'?'actions':'ai');
+    document.getElementById('lifeBtn').className='icon-toggle active-life'; document.getElementById('workBtn').className='icon-toggle active-work'; document.getElementById('mdModeLabel').textContent='Work calendar'; }
+  if(t==='chats'){ document.getElementById('view-chats').classList.remove('hidden'); document.getElementById('suchiInputBar').classList.add('hidden'); setSub('agents'); setMode(mode); }
+  renderSubTabs();
+}
+
+/* ---------- Suchi chat ---------- */
+function addMsg(box,text,me){ const d=document.createElement('div'); d.className='max-w-[80%] px-3 py-2 rounded-2xl text-sm '+(me?'ml-auto bg-[var(--gold)] text-black':'card'); d.textContent=text; box.appendChild(d); box.scrollTop=box.scrollHeight; }
+function sendSuchi(){ const i=document.getElementById('suchiInput'); if(!i.value.trim())return; const box=document.getElementById('suchiChat'); addMsg(box,i.value,true); i.value=''; setTimeout(()=>addMsg(box,"Got it — I'll line that up and check with the right agent.",false),400); }
+
+/* ---------- Actions cards (live Gmail drafts + WhatsApp drafts) ---------- */
+async function loadActions(){
+  const box=document.getElementById('suchiActions'); if(!box) return; box.innerHTML=`<div class="snap-card flex items-center justify-center text-[var(--mut)] text-sm">Loading…</div>`;
+  let gmail=[], wa=[];
+  try{ const r=await fetch('/api/gmail/drafts'); if(r.ok) gmail=await r.json(); }catch(e){}
+  try{ const r=await fetch('/api/whatsapp/drafts'); if(r.ok) wa=(await r.json()).filter(d=>d.status==='pending'); }catch(e){}
+  box.innerHTML=''; let n=0;
+  gmail.forEach(d=>{ addActionCard(box,'Gmail draft', d.message?.snippet || 'Draft ready for review', [
+    {label:'Open in Gmail', run:()=>window.open('https://mail.google.com/mail/u/0/#drafts/'+d.id,'_blank')}
+  ]); n++; });
+  wa.forEach(d=>{ addActionCard(box,'WhatsApp draft', `To ${d.to}: ${d.body}`, [
+    {label:'Approve & send', run: async ()=>{ await fetch('/api/whatsapp/send/'+d.id,{method:'POST'}); }},
+    {label:'Dismiss', run: async ()=>{ await fetch('/api/whatsapp/dismiss/'+d.id,{method:'POST'}); }}
+  ]); n++; });
+  if(n===0) box.innerHTML=`<div class="snap-card flex items-center justify-center text-[var(--mut)] text-sm text-center px-6">No pending actions — you're caught up.<br><span class="text-xs">Connect Google in Settings to see Gmail drafts here.</span></div>`;
+}
+function addActionCard(box,type,title,opts){
+  const c=document.createElement('div'); c.className='snap-card flex flex-col justify-center';
+  c.innerHTML=`<div class="card p-5"><div class="text-xs text-[var(--mut)] mb-1">${type}</div><div class="font-medium text-lg mb-4">${title}</div>
+    <div class="flex flex-col gap-2"></div>
+    <div class="text-xs text-[var(--mut)] text-center mt-3">Scroll for next</div></div>`;
+  const optWrap=c.querySelector('.flex-col.gap-2');
+  opts.forEach(o=>{ const b=document.createElement('button'); b.className='btn bg-[var(--surf2)] py-2.5 text-sm text-left px-3'; b.textContent=o.label;
+    b.onclick=async ()=>{ b.disabled=true; b.textContent=o.label+'…'; await o.run(); c.classList.add('swipe-up'); setTimeout(()=>{ c.remove(); loadActions(); },280); };
+    optWrap.appendChild(b); });
+  box.appendChild(c);
+}
+
+/* ---------- Chats list ---------- */
+const agentReplies={
+  'Nira — Health':["Logged it. Want me to adjust tomorrow's routine too?","I can set a reminder for that — same time daily?"],
+  'Kavi — Home':["On it — I'll draft a task and share it with the family chat once approved.","Added to the home list."],
+  'Meera — Finance':["Pulled the numbers from Sheets — want the summary now or after market close?","I'll flag anything over budget."],
+  'Arjun — Learning':["Added to your reading queue. 15 min today?","I'll break that into a 3-day plan."],
+  'Isha — Errands':["I'll check store hours and confirm the slot.","Added — want me to remind you an hour before?"],
+  'Rohan — Ops':["Checked the pipeline — no blockers right now.","I'll draft the update for standup."],
+  'Zara — Marketing':["Drafted 3 headline options — want to see them?","Campaign metrics are in, summarizing now."],
+  'Dev — Engineering':["Build's green. Want me to open the PR draft?","I'll ping QA once staging is ready."],
+  'Anika — Sales':["Pipeline looks healthy this week — 2 deals need follow-up.","I'll draft the follow-up email for review."],
+  'Kiran — HR':["I'll prep the onboarding checklist.","Leave request drafted — needs your approval."]
+};
+let chatState={};
+function renderChatList(){ const box=document.getElementById('view-chats'); box.innerHTML='';
+  const isAgents = subTab==='agents';
+  const names = isAgents ? (mode==='life'?life.agents:work.agents) : (mode==='life'?life.family:work.teams);
+  if(!isAgents){ const addBtn=document.createElement('button'); addBtn.onclick=()=>addChat(); addBtn.className='card w-full flex items-center gap-3 p-3 text-left border-dashed';
+    addBtn.innerHTML=`<div class="w-11 h-11 rounded-full flex items-center justify-center text-[var(--gold)] border border-[var(--bd)] text-xl">+</div><div class="font-medium text-[var(--gold)]">${mode==='life'?'Add family chat':'Add team'}</div>`;
+    box.appendChild(addBtn); }
+  names.forEach(n=>{ const row=document.createElement('button'); row.onclick=()=>openChat(n,isAgents); row.className='card w-full flex items-center gap-3 p-3 text-left';
+    row.innerHTML=`<div class="w-11 h-11 rounded-full bg-[var(--surf2)] flex items-center justify-center text-xs text-[var(--mut)]">${n[0]}</div>
+      <div class="flex-1 min-w-0"><div class="font-medium truncate">${n}</div><div class="text-xs text-[var(--mut)] truncate">${isAgents?'Tap to open chat':'Synced via Google Chat'}</div></div>`;
+    box.appendChild(row); }); }
+function addChat(){ const name=prompt(mode==='life'?'Name this family chat:':'Name this team:'); if(!name)return;
+  if(mode==='life') life.family.push(name); else work.teams.push(name); renderChatList(); }
+function openChat(name,isAgent){ chatState.name=name; chatState.isAgent=isAgent;
+  document.getElementById('chatDetailName').textContent=name; const m=document.getElementById('chatDetailMsgs'); m.innerHTML='';
+  addMsg(m, isAgent?"Hey — here for whatever you need.":"Chat synced. Messages here mirror your Google Chat thread.", false);
+  document.getElementById('chatDetail').classList.remove('hidden'); document.getElementById('chatDetail').classList.add('flex'); }
+function closeChatDetail(){ document.getElementById('chatDetail').classList.add('hidden'); }
+function sendChatDetail(){ const i=document.getElementById('chatDetailInput'); if(!i.value.trim())return; const box=document.getElementById('chatDetailMsgs');
+  addMsg(box,i.value,true); i.value='';
+  if(chatState.isAgent){ const r=agentReplies[chatState.name]||["Got it — working on that."]; setTimeout(()=>addMsg(box,r[Math.floor(Math.random()*r.length)],false),450); }
+}
+
+/* ---------- Routine timer ---------- */
+let rt={steps:[],durs:[],i:0,t:0,timer:null,paused:false,name:''};
+function startRoutine(name,steps,durs){ rt={steps,durs,i:0,t:durs[0],timer:null,paused:false,name}; document.getElementById('rtName').textContent=name; openModal('routineModal'); rtRenderStep(); rtTick(); }
+function rtRenderStep(){ document.getElementById('rtStep').textContent=rt.steps[rt.i]; }
+function fmt(s){ const m=Math.floor(s/60),ss=s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+function rtTick(){ clearInterval(rt.timer); rt.timer=setInterval(()=>{ if(rt.paused)return; rt.t--; document.getElementById('rtClock').textContent=fmt(rt.t); if(rt.t<=0) rtSkip(); },1000); document.getElementById('rtClock').textContent=fmt(rt.t); }
+function rtSkip(){ rt.i++; if(rt.i>=rt.steps.length){ rtStop(); return; } rt.t=rt.durs[rt.i]; rtRenderStep(); }
+function rtPause(){ rt.paused=!rt.paused; document.getElementById('rtPauseBtn').textContent=rt.paused?'Resume':'Pause'; }
+function rtStop(){ clearInterval(rt.timer); closeModal('routineModal'); }
+
+/* ---------- modal / misc ---------- */
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme'); document.documentElement.setAttribute('data-theme', cur==='light'?'dark':'light'); }
+function syncNow(){ const b=document.getElementById('syncBtn'); b.classList.add('animate-spin');
+  Promise.all([loadCalendar(0), loadTasksAndStars(), loadActions()]).finally(()=>setTimeout(()=>b.classList.remove('animate-spin'),500)); }
+
+/* ---------- Google connection ---------- */
+let connected=false;
+async function checkConnection(){
+  try{ const r=await fetch('/api/me'); const d=await r.json(); connected=!!d.connected;
+    const row=document.getElementById('gConnectRow');
+    row.innerHTML = connected
+      ? `<div class="text-sm"><div>Google account</div><div class="text-xs text-[var(--mut)]">${d.email}</div></div><span class="text-xs px-2 py-1 rounded-lg bg-[var(--gold)]/20 text-[var(--gold)]">Connected</span>`
+      : `<button onclick="location.href='/api/auth/google'" class="w-full btn bg-[var(--gold)] text-black py-2 text-sm font-medium">Connect Google</button>`;
+  }catch(e){ connected=false; }
+  return connected;
+}
+async function loadPerms(){ if(!connected) return; try{ const r=await fetch('/api/permissions'); if(!r.ok)return; const p=await r.json();
+  ['Gmail','Calendar','Workspace','Tasks','Whatsapp'].forEach(k=>{ const el=document.getElementById('perm'+k); if(el) el.checked = p[k.toLowerCase()]!==false; }); }catch(e){} }
+async function savePerms(){ if(!connected) return; const body={ gmail:document.getElementById('permGmail').checked, calendar:document.getElementById('permCalendar').checked, workspace:document.getElementById('permWorkspace').checked, tasks:document.getElementById('permTasks').checked, whatsapp:document.getElementById('permWhatsapp').checked };
+  await fetch('/api/permissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+
+/* ---------- Calendar ---------- */
+let dayOffset=0;
+async function loadCalendar(offset=0){
+  dayOffset=offset;
+  document.getElementById('scheduleDayLabel').textContent = offset===0?'Today':offset===1?'Tomorrow':new Date(Date.now()+offset*864e5).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  if(!connected){ document.getElementById('mdEventTitle').textContent='Connect Google to see today\'s plan'; document.getElementById('mdEventTime').textContent=''; document.getElementById('scheduleList').innerHTML='<div class="text-[var(--mut)]">Connect Google in Settings to sync your calendar.</div>'; return; }
+  let events=[]; try{ const r=await fetch('/api/calendar/day?offset='+offset); if(r.ok) events=await r.json(); }catch(e){}
+  if(offset===0){
+    const now=new Date();
+    const cur = events.find(e=>{ const s=new Date(e.start.dateTime||e.start.date), en=new Date(e.end.dateTime||e.end.date); return now>=s&&now<=en; }) || events[0];
+    document.getElementById('mdEventTitle').textContent = cur ? (cur.summary||'Untitled event') : 'No events today';
+    document.getElementById('mdEventTime').textContent = cur && cur.start.dateTime ? new Date(cur.start.dateTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' – '+new Date(cur.end.dateTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+  }
+  const list=document.getElementById('scheduleList'); list.innerHTML='';
+  if(!events.length){ list.innerHTML='<div class="text-[var(--mut)]">No events.</div>'; }
+  events.forEach(e=>{ const t = e.start.dateTime ? new Date(e.start.dateTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : 'All day';
+    const row=document.createElement('div'); row.className='flex gap-3';
+    row.innerHTML=`<span class="w-16 shrink-0 text-[var(--mut)]">${t}</span><div class="card flex-1 p-2">${e.summary||'Untitled'}</div>`; list.appendChild(row); });
+}
+function openSchedule(){ openModal('scheduleModal'); loadCalendar(0); }
+function nextDay(){ loadCalendar(dayOffset+1); }
+async function addEvent(){ if(!connected){ alert('Connect Google first, in Settings.'); return; }
+  const title=prompt('Event title:'); if(!title) return;
+  const timeStr=prompt('Start time today, 24h HH:MM (e.g. 15:30):','12:00'); if(!timeStr) return;
+  const [h,m]=timeStr.split(':').map(Number); const start=new Date(Date.now()+dayOffset*864e5); start.setHours(h,m,0,0);
+  const end=new Date(start.getTime()+30*60000);
+  await fetch('/api/calendar/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ summary:title, start:{dateTime:start.toISOString()}, end:{dateTime:end.toISOString()} })});
+  loadCalendar(dayOffset);
+}
+
+/* ---------- Tasks: North Stars, Overdue, Routines ---------- */
+let starMap={};
+async function loadTasksAndStars(){
+  const starsBox=document.getElementById('starsBox');
+  if(!connected){ starsBox.innerHTML='<div class="text-sm text-[var(--mut)]">Connect Google to load your North Stars.</div>'; document.getElementById('overdueBox').innerHTML=''; return; }
+  let items=[]; try{ const r=await fetch('/api/tasks'); if(r.ok) items=await r.json(); }catch(e){}
+  const stars=items.filter(t=>t.title?.startsWith('★'));
+  starsBox.innerHTML=''; starMap={};
+  stars.forEach(t=>{ starMap[t.id]=t; const b=document.createElement('button'); b.className='card w-full text-left p-3.5 flex items-center justify-between';
+    b.onclick=()=>openStar(t.id); b.innerHTML=`<span>${t.title.replace('★ ','')}</span><span class="text-[var(--gold)] text-xs">${t.status==='completed'?'done':'active'}</span>`; starsBox.appendChild(b); });
+  const addB=document.createElement('button'); addB.onclick=createStar; addB.className='card w-full text-left p-3.5 text-[var(--gold)]'; addB.textContent='+ Add a North Star'; starsBox.appendChild(addB);
+  const overdue=items.filter(t=>t.due && new Date(t.due) < new Date() && t.status!=='completed' && !t.title?.startsWith('★') && !t.title?.startsWith('▶'));
+  const ob=document.getElementById('overdueBox'); ob.innerHTML='';
+  if(!overdue.length) ob.innerHTML='<div class="text-sm text-[var(--mut)]">Nothing overdue.</div>';
+  overdue.forEach(t=>{ const d=document.createElement('div'); d.className='card min-w-[150px] p-3 shrink-0';
+    d.innerHTML=`<div class="text-sm">${t.title}</div><button class="text-xs text-[var(--gold)] mt-1">Mark done</button>`;
+    d.querySelector('button').onclick=async ()=>{ await fetch('/api/tasks/'+t.id+'/complete',{method:'POST'}); loadTasksAndStars(); }; ob.appendChild(d); });
+}
+async function createStar(){ if(!connected){ alert('Connect Google first, in Settings.'); return; } const title=prompt('Name this North Star (the outcome you want):'); if(!title) return;
+  await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'★ '+title})}); loadTasksAndStars(); }
+function openStar(id){ const t=starMap[id]; document.getElementById('starTitle').textContent=t.title.replace('★ ',''); document.getElementById('starNotes').textContent=t.notes||'No breakdown yet — edit this task in Google Tasks to add steps.'; document.getElementById('starModal').dataset.taskId=id; openModal('starModal'); }
+async function completeStar(){ const id=document.getElementById('starModal').dataset.taskId; if(!id) return; await fetch('/api/tasks/'+id+'/complete',{method:'POST'}); closeModal('starModal'); loadTasksAndStars(); }
+async function startRoutineReal(name,steps,durs){
+  if(connected){ try{ await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'▶ '+name, notes: steps.join(' | ')})}); loadTasksAndStars(); }catch(e){} }
+  startRoutine(name,steps,durs);
+}
+
+/* ---------- Chat -> Task ---------- */
+async function taskFromChat(){ if(!connected){ alert('Connect Google first, in Settings.'); return; }
+  await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Follow up: '+chatState.name})});
+  loadTasksAndStars(); alert('Task added.'); }
+
+/* init */
+setTab('myday');
+(async function init(){
+  await checkConnection();
+  await loadPerms();
+  await loadCalendar(0);
+  await loadTasksAndStars();
+  const box=document.getElementById('suchiChat');
+  addMsg(box, connected ? "Morning. Checking your calendar and tasks — anything you want me to triage first?" : "Connect your Google account in Settings so I can see your calendar, tasks, and drafts.", false);
+  if(new URLSearchParams(location.search).get('connected')){ openModal('settingsModal'); history.replaceState({}, '', location.pathname); }
+})();
+</script>
+</body>
+</html>
