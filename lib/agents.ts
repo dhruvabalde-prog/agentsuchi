@@ -1,0 +1,6 @@
+export type AgentScope = 'Professional' | 'Personal';
+export type AgentGender = 'male' | 'female';
+export type AgentDefinition = { id:string; name:string; role:string; scope:AgentScope; gender?:AgentGender; avatar:string };
+export const EXISTING_AGENTS: AgentDefinition[] = [];
+export function findMatchingAgent(agents:AgentDefinition[],name:string,role:string,scope:AgentScope){const n=name.toLowerCase().trim(),r=role.toLowerCase().trim();return agents.find(a=>a.scope===scope&&((n&&(a.name.toLowerCase().includes(n)||n.includes(a.name.toLowerCase())))||(r&&(a.role.toLowerCase().includes(r)||r.includes(a.role.toLowerCase())))));}
+export function makeAvatar(role:string,gender:AgentGender='female'){const r=role.toLowerCase();if(/legal|finance|contract/.test(r))return gender==='female'?'🦉':'🦁';if(/calendar|travel|schedule|logistics/.test(r))return gender==='female'?'🦊':'🦅';if(/product|design|creative|research/.test(r))return gender==='female'?'🐼':'🐺';if(/infra|cloud|api|engineering|technical/.test(r))return gender==='female'?'🐬':'🐙';if(/health|well-being|fitness/.test(r))return gender==='female'?'🐨':'🐻';if(/home|family|personal/.test(r))return gender==='female'?'🐰':'🦝';if(/writing|content|communication/.test(r))return gender==='female'?'🦋':'🦅';return gender==='female'?'🌸':'🌿';}
