@@ -1,0 +1,1 @@
+import SuchiApp from '@/components/SuchiApp';export default function Page(){return <SuchiApp/>}
