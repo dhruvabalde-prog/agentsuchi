@@ -1,0 +1,2 @@
+import {NextResponse} from 'next/server';import {cookies} from 'next/headers';import {oauthClient,SCOPES,createState} from '@/lib/google';export const runtime='nodejs';
+export async function GET(){const state=createState();(await cookies()).set('suchi_oauth_state',state,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',path:'/',maxAge:600});return NextResponse.redirect(oauthClient().generateAuthUrl({access_type:'offline',prompt:'consent',scope:SCOPES,state,include_granted_scopes:true}));}
