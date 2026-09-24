@@ -1,0 +1,1 @@
+import {NextResponse} from 'next/server';import {getSession} from '@/lib/session';export const dynamic='force-dynamic';export async function GET(){const s=await getSession();if(!s)return NextResponse.json({authenticated:false},{status:401});return NextResponse.json({authenticated:true,profile:{name:s.name,email:s.email,picture:s.picture}});}
