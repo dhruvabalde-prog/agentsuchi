@@ -1,0 +1,1 @@
+import {NextResponse} from 'next/server';import {clearSession} from '@/lib/session';import {clearToolPreferences} from '@/lib/tool-preferences';export const dynamic='force-dynamic';export async function POST(){await clearSession();await clearToolPreferences();return NextResponse.json({ok:true});}
